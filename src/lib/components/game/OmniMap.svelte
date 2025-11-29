@@ -26,6 +26,8 @@
   import faviconSlack from '$lib/assets/favicons/slack.png';
   import faviconAirbnb from '$lib/assets/favicons/airbnb.png';
   import faviconSequoia from '$lib/assets/favicons/sequoia.png';
+  import faviconMeta from '$lib/assets/favicons/meta.png';
+  import faviconGoogleAds from '$lib/assets/favicons/googleads.png';
 
   export let nodes: GameNode[];
   export let activeNodeId: string | null;
@@ -66,31 +68,172 @@
   // Layout State
   let clusterLayout: Record<string, { x: number; y: number; width: number; height: number; z: number }> = {};
   
-  // Modern App Themes (macOS Style) with Favicons
-  const APP_CONFIG: Record<string, { title: string; type: 'browser' | 'code' | 'chat' | 'doc' | 'finder'; color: string; favicon: string }> = {
-    'code': { title: 'VS Code - Project', type: 'code', color: '#2C2C32', favicon: faviconVscode },
-    'infra': { title: 'AWS Management Console', type: 'browser', color: '#EC7211', favicon: faviconAws },
-    'reddit': { title: 'r/startups - Reddit', type: 'browser', color: '#FF4500', favicon: faviconReddit },
-    'twitter': { title: 'X / Home', type: 'browser', color: '#000000', favicon: faviconTwitter },
-    'linkedin': { title: 'Feed | LinkedIn', type: 'browser', color: '#0A66C2', favicon: faviconLinkedin },
-    'launch': { title: 'Product Hunt - Best New', type: 'browser', color: '#DA552F', favicon: faviconProducthunt },
-    'dark': { title: 'Tor Browser', type: 'browser', color: '#4D2376', favicon: faviconTor },
-    'sf': { title: 'Maps - San Francisco', type: 'finder', color: '#A855F7', favicon: faviconMaps },
-    'fund': { title: 'Mercury Bank - Dashboard', type: 'browser', color: '#10B981', favicon: faviconMercury },
-    'design': { title: 'Figma - UI Kit', type: 'code', color: '#F24E1E', favicon: faviconFigma },
-    'ai': { title: 'ChatGPT 4o', type: 'chat', color: '#10A37F', favicon: faviconOpenai },
-    'ops': { title: 'Notion - Roadmap', type: 'doc', color: '#FFFFFF', favicon: faviconNotion },
-    'legal': { title: 'Term_Sheet_Final_v12.pdf', type: 'finder', color: '#FF3B30', favicon: faviconStripe },
-    'sales': { title: 'HubSpot - Contacts', type: 'browser', color: '#FF7A59', favicon: faviconHubspot },
-    'seo': { title: 'Google Search Console', type: 'browser', color: '#4285F4', favicon: faviconGoogle },
-    'content': { title: 'TikTok Creative Center', type: 'browser', color: '#FE2C55', favicon: faviconTiktok },
-    'bio': { title: 'Whoop Dashboard', type: 'browser', color: '#CD2026', favicon: faviconWhoop },
-    'security': { title: 'Vanta - Compliance', type: 'browser', color: '#2E2E3A', favicon: faviconVanta },
-    'outsource': { title: 'Upwork - Messages (3)', type: 'chat', color: '#14A800', favicon: faviconUpwork },
-    'culture': { title: 'Slack - #general', type: 'chat', color: '#4A154B', favicon: faviconSlack },
-    'nomad': { title: 'Airbnb - Canggu, Bali', type: 'browser', color: '#FF5A5F', favicon: faviconAirbnb },
-    'vc': { title: 'Sequoia - Pitch Deck', type: 'finder', color: '#00925D', favicon: faviconSequoia },
-    'sins': { title: 'Terminal', type: 'code', color: '#000000', favicon: faviconVscode },
+  // Platform Theme Configuration - Original app colors
+  interface AppTheme {
+    title: string;
+    type: 'browser' | 'code' | 'chat' | 'doc' | 'finder';
+    favicon: string;
+    // Theme colors
+    headerBg: string;
+    headerText: string;
+    contentBg: string;
+    contentText: string;
+    accent: string;
+    itemBg: string;
+    itemHover: string;
+  }
+
+  const APP_CONFIG: Record<string, AppTheme> = {
+    'code': { 
+      title: 'VS Code - Project', type: 'code', favicon: faviconVscode,
+      headerBg: '#323233', headerText: '#cccccc', 
+      contentBg: '#1e1e1e', contentText: '#d4d4d4', accent: '#007acc',
+      itemBg: '#2d2d30', itemHover: '#094771'
+    },
+    'infra': { 
+      title: 'AWS Management Console', type: 'browser', favicon: faviconAws,
+      headerBg: '#232f3e', headerText: '#ffffff',
+      contentBg: '#0f1b2a', contentText: '#d1d5db', accent: '#ff9900',
+      itemBg: '#1a2634', itemHover: '#2d3d4f'
+    },
+    'reddit': { 
+      title: 'r/startups - Reddit', type: 'browser', favicon: faviconReddit,
+      headerBg: '#1a1a1b', headerText: '#d7dadc',
+      contentBg: '#030303', contentText: '#d7dadc', accent: '#ff4500',
+      itemBg: '#1a1a1b', itemHover: '#272729'
+    },
+    'twitter': { 
+      title: 'X / Home', type: 'browser', favicon: faviconTwitter,
+      headerBg: '#000000', headerText: '#e7e9ea',
+      contentBg: '#000000', contentText: '#e7e9ea', accent: '#1d9bf0',
+      itemBg: '#16181c', itemHover: '#1d1f23'
+    },
+    'linkedin': { 
+      title: 'Feed | LinkedIn', type: 'browser', favicon: faviconLinkedin,
+      headerBg: '#1b1f23', headerText: '#ffffff',
+      contentBg: '#000000', contentText: '#ffffff', accent: '#0a66c2',
+      itemBg: '#1b1f23', itemHover: '#2c3338'
+    },
+    'launch': { 
+      title: 'Product Hunt - Best New', type: 'browser', favicon: faviconProducthunt,
+      headerBg: '#1a1a1a', headerText: '#ffffff',
+      contentBg: '#121212', contentText: '#ffffff', accent: '#da552f',
+      itemBg: '#1f1f1f', itemHover: '#2a2a2a'
+    },
+    'dark': { 
+      title: 'Tor Browser', type: 'browser', favicon: faviconTor,
+      headerBg: '#1d1133', headerText: '#ffffff',
+      contentBg: '#0d0d0d', contentText: '#b8b8b8', accent: '#7d4698',
+      itemBg: '#1a1a2e', itemHover: '#2d2d4a'
+    },
+    'sf': { 
+      title: 'Maps - San Francisco', type: 'finder', favicon: faviconMaps,
+      headerBg: '#1c1c1e', headerText: '#ffffff',
+      contentBg: '#2c2c2e', contentText: '#ffffff', accent: '#007aff',
+      itemBg: '#3a3a3c', itemHover: '#48484a'
+    },
+    'fund': { 
+      title: 'Mercury Bank - Dashboard', type: 'browser', favicon: faviconMercury,
+      headerBg: '#0f0f0f', headerText: '#ffffff',
+      contentBg: '#000000', contentText: '#ffffff', accent: '#6366f1',
+      itemBg: '#18181b', itemHover: '#27272a'
+    },
+    'design': { 
+      title: 'Figma - UI Kit', type: 'code', favicon: faviconFigma,
+      headerBg: '#2c2c2c', headerText: '#ffffff',
+      contentBg: '#1e1e1e', contentText: '#ffffff', accent: '#a259ff',
+      itemBg: '#383838', itemHover: '#4a4a4a'
+    },
+    'ai': { 
+      title: 'ChatGPT 4o', type: 'chat', favicon: faviconOpenai,
+      headerBg: '#202123', headerText: '#ececf1',
+      contentBg: '#343541', contentText: '#ececf1', accent: '#10a37f',
+      itemBg: '#40414f', itemHover: '#4a4b59'
+    },
+    'ops': { 
+      title: 'Notion - Roadmap', type: 'doc', favicon: faviconNotion,
+      headerBg: '#191919', headerText: '#ffffff',
+      contentBg: '#191919', contentText: '#ffffff', accent: '#ffffff',
+      itemBg: '#252525', itemHover: '#333333'
+    },
+    'legal': { 
+      title: 'Term_Sheet_Final_v12.pdf', type: 'finder', favicon: faviconStripe,
+      headerBg: '#0a2540', headerText: '#ffffff',
+      contentBg: '#0a2540', contentText: '#ffffff', accent: '#635bff',
+      itemBg: '#1a3a5c', itemHover: '#2a4a6c'
+    },
+    'sales': { 
+      title: 'HubSpot - Contacts', type: 'browser', favicon: faviconHubspot,
+      headerBg: '#2d3e50', headerText: '#ffffff',
+      contentBg: '#1c2a3a', contentText: '#ffffff', accent: '#ff7a59',
+      itemBg: '#2d3e50', itemHover: '#3d4e60'
+    },
+    'seo': { 
+      title: 'Google Search Console', type: 'browser', favicon: faviconGoogle,
+      headerBg: '#202124', headerText: '#e8eaed',
+      contentBg: '#202124', contentText: '#e8eaed', accent: '#8ab4f8',
+      itemBg: '#303134', itemHover: '#3c4043'
+    },
+    'content': { 
+      title: 'TikTok Creative Center', type: 'browser', favicon: faviconTiktok,
+      headerBg: '#121212', headerText: '#ffffff',
+      contentBg: '#000000', contentText: '#ffffff', accent: '#fe2c55',
+      itemBg: '#1f1f1f', itemHover: '#2f2f2f'
+    },
+    'bio': { 
+      title: 'Whoop Dashboard', type: 'browser', favicon: faviconWhoop,
+      headerBg: '#1a1a1a', headerText: '#ffffff',
+      contentBg: '#0d0d0d', contentText: '#ffffff', accent: '#44d62c',
+      itemBg: '#1f1f1f', itemHover: '#2a2a2a'
+    },
+    'security': { 
+      title: 'Vanta - Compliance', type: 'browser', favicon: faviconVanta,
+      headerBg: '#0f172a', headerText: '#ffffff',
+      contentBg: '#020617', contentText: '#e2e8f0', accent: '#3b82f6',
+      itemBg: '#1e293b', itemHover: '#334155'
+    },
+    'outsource': { 
+      title: 'Upwork - Messages (3)', type: 'chat', favicon: faviconUpwork,
+      headerBg: '#001e00', headerText: '#ffffff',
+      contentBg: '#001e00', contentText: '#ffffff', accent: '#14a800',
+      itemBg: '#003300', itemHover: '#004400'
+    },
+    'culture': { 
+      title: 'Slack - #general', type: 'chat', favicon: faviconSlack,
+      headerBg: '#350d36', headerText: '#ffffff',
+      contentBg: '#1a1d21', contentText: '#d1d2d3', accent: '#e01e5a',
+      itemBg: '#222529', itemHover: '#2c2d31'
+    },
+    'nomad': { 
+      title: 'Airbnb - Canggu, Bali', type: 'browser', favicon: faviconAirbnb,
+      headerBg: '#1a1a1a', headerText: '#ffffff',
+      contentBg: '#000000', contentText: '#ffffff', accent: '#ff385c',
+      itemBg: '#1f1f1f', itemHover: '#2a2a2a'
+    },
+    'vc': { 
+      title: 'Sequoia - Pitch Deck', type: 'finder', favicon: faviconSequoia,
+      headerBg: '#0d1117', headerText: '#ffffff',
+      contentBg: '#0d1117', contentText: '#ffffff', accent: '#00925d',
+      itemBg: '#161b22', itemHover: '#21262d'
+    },
+    'sins': { 
+      title: 'Terminal', type: 'code', favicon: faviconVscode,
+      headerBg: '#1e1e1e', headerText: '#cccccc',
+      contentBg: '#000000', contentText: '#00ff00', accent: '#00ff00',
+      itemBg: '#0d0d0d', itemHover: '#1a1a1a'
+    },
+    'meta': { 
+      title: 'Meta Ads Manager', type: 'browser', favicon: faviconMeta,
+      headerBg: '#1c2b33', headerText: '#e4e6eb',
+      contentBg: '#18191a', contentText: '#e4e6eb', accent: '#0866ff',
+      itemBg: '#242526', itemHover: '#3a3b3c'
+    },
+    'gads': { 
+      title: 'Google Ads - Campaigns', type: 'browser', favicon: faviconGoogleAds,
+      headerBg: '#1a73e8', headerText: '#ffffff',
+      contentBg: '#202124', contentText: '#e8eaed', accent: '#8ab4f8',
+      itemBg: '#303134', itemHover: '#3c4043'
+    },
   };
 
   onMount(() => {
@@ -333,26 +476,36 @@
 
     {#each Object.entries(clusters) as [cluster, clusterNodes] (cluster)}
       {#if clusterLayout[cluster]}
-        {@const config = APP_CONFIG[cluster] || { title: cluster, type: 'finder', color: '#666', favicon: '' }}
+        {@const config = APP_CONFIG[cluster] || { 
+          title: cluster, type: 'finder', favicon: '',
+          headerBg: '#323233', headerText: '#ffffff',
+          contentBg: '#1e1e1e', contentText: '#d4d4d4', accent: '#666',
+          itemBg: '#2d2d30', itemHover: '#3d3d40'
+        }}
         {@const layout = clusterLayout[cluster]}
         {@const leafNodes = getLeafNodes(clusterNodes)}
         
         <!-- svelte-ignore a11y-no-static-element-interactions -->
         <div 
-          class="mac-window"
-          class:dark-mode={['code', 'sins', 'culture', 'security', 'dark'].includes(cluster)}
+          class="mac-window themed-window"
           style="
             left: {layout.x}px;
             top: {layout.y}px;
             width: {layout.width}px;
             height: {layout.height}px;
             z-index: {layout.z};
+            --theme-header-bg: {config.headerBg};
+            --theme-header-text: {config.headerText};
+            --theme-content-bg: {config.contentBg};
+            --theme-content-text: {config.contentText};
+            --theme-accent: {config.accent};
+            --theme-item-bg: {config.itemBg};
+            --theme-item-hover: {config.itemHover};
           "
           on:mousedown|stopPropagation
         >
           <div 
             class="window-header cursor-move"
-            style="background: {config.type === 'code' || cluster === 'sins' ? '#1e1e1e' : '#f5f5f5'}"
             on:mousedown={(e) => startWindowDrag(e, cluster)}
           >
             <div class="traffic-lights">
@@ -360,7 +513,7 @@
               <div class="light minimize"></div>
               <div class="light maximize"></div>
             </div>
-            <div class="window-title" style="color: {config.type === 'code' || cluster === 'sins' ? '#999' : '#333'}">
+            <div class="window-title">
               {#if config.favicon}
                 <img src={config.favicon} alt="" class="window-favicon" />
               {/if}
@@ -368,7 +521,7 @@
             </div>
           </div>
 
-          <div class="window-content" class:code-bg={config.type === 'code'} class:terminal-bg={cluster === 'sins'}>
+          <div class="window-content">
             {#if config.type === 'browser'}
               <div class="browser-bar">
                 <div class="nav-arrows">
@@ -381,21 +534,21 @@
                     </div>
             {:else if config.type === 'chat'}
               <div class="chat-header">
-                <div class="avatar" style="background: {config.color}"></div>
+                <div class="avatar" style="background: var(--theme-accent)"></div>
                 <div class="chat-info">
                   <div class="chat-name">{config.title.split(' ')[0]}</div>
-                  <div class="chat-status">Online</div>
+                  <div class="chat-status" style="color: var(--theme-accent)">● Online</div>
                 </div>
               </div>
             {/if}
 
             <div class="scrollable-content">
               {#if cluster === 'sins'}
-                <div class="terminal-text">
-                  <span class="prompt">user@yc-sim:~$</span> ./check_status.sh<br>
-                  <span class="success">✔</span> Infra scaling... OK<br>
-                  <span class="error">✖</span> Tech debt... CRITICAL<br>
-                  <span class="prompt">user@yc-sim:~$</span> _<br>
+                <div class="terminal-text" style="color: var(--theme-accent)">
+                  <span class="prompt" style="color: #3498db">user@yc-sim:~$</span> ./check_status.sh<br>
+                  <span style="color: #2ecc71">✔</span> Infra scaling... OK<br>
+                  <span style="color: #e74c3c">✖</span> Tech debt... CRITICAL<br>
+                  <span class="prompt" style="color: #3498db">user@yc-sim:~$</span> _<br>
                 </div>
               {/if}
 
@@ -411,7 +564,7 @@
                     on:click={() => handleNodeClick(node)}
                     disabled={style.isBanned}
                   >
-                    <div class="item-icon" style="background: {config.color}20; color: {config.color}">
+                    <div class="item-icon">
                       {#if node.type === NodeType.Vanity}📈
                       {:else if node.type === NodeType.DarkPattern}💀
                       {:else if node.type === NodeType.GoldMine}💎
@@ -425,14 +578,14 @@
                       <div class="item-title">{node.label}</div>
                       <div class="item-meta">
                         <span class="cost">-{node.energyCost}⚡</span>
-                        <span class="risk" class:text-red-500={node.risk > 30}>
+                        <span class="risk" class:high-risk={node.risk > 30}>
                           {node.risk > 0 ? `${node.risk}% Risk` : 'Safe'}
                         </span>
                       </div>
                         </div>
                         
                     {#if style.isLocked}
-                      <div class="lock-icon">🔒</div>
+                      <div class="lock-badge">🔒</div>
                     {:else}
                       <div class="run-btn">Run</div>
                     {/if}
@@ -627,31 +780,25 @@
     padding: 2px 0;
   }
 
-  /* Window Styling */
+  /* Window Styling - Themed */
   .mac-window {
     position: absolute;
-    background: #fff;
     border-radius: 12px;
     box-shadow: 
-      0 20px 60px rgba(0,0,0,0.3),
-      0 0 0 1px rgba(0,0,0,0.05);
+      0 20px 60px rgba(0,0,0,0.4),
+      0 0 0 1px rgba(255,255,255,0.1);
     overflow: hidden;
     display: flex;
     flex-direction: column;
     transition: box-shadow 0.2s;
+    user-select: none;
+    -webkit-user-select: none;
   }
 
   .mac-window:hover {
     box-shadow: 
-      0 40px 100px rgba(0,0,0,0.5),
-      0 0 0 1px rgba(0,0,0,0.1);
-  }
-
-  .mac-window.dark-mode {
-    background: #1e1e1e;
-    box-shadow: 
-      0 20px 60px rgba(0,0,0,0.6),
-      0 0 0 1px rgba(255,255,255,0.1);
+      0 40px 100px rgba(0,0,0,0.6),
+      0 0 0 1px rgba(255,255,255,0.15);
   }
 
   .window-header {
@@ -660,17 +807,14 @@
     align-items: center;
     justify-content: center;
     position: relative;
-    border-bottom: 1px solid rgba(0,0,0,0.06);
     flex-shrink: 0;
     cursor: grab;
+    background: var(--theme-header-bg, #323233);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
   }
   
   .window-header:active {
     cursor: grabbing;
-  }
-
-  .mac-window.dark-mode .window-header {
-    border-bottom: 1px solid rgba(255,255,255,0.06);
   }
 
   .traffic-lights {
@@ -688,11 +832,11 @@
   .window-title {
     font-size: 13px;
     font-weight: 600;
-    opacity: 0.9;
     pointer-events: none;
     display: flex;
     align-items: center;
     gap: 6px;
+    color: var(--theme-header-text, #ffffff);
   }
 
   .window-favicon {
@@ -707,57 +851,57 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    background: var(--theme-content-bg, #1e1e1e);
+    color: var(--theme-content-text, #d4d4d4);
   }
 
   .browser-bar {
     padding: 8px 12px;
-    background: rgba(0,0,0,0.03);
-    border-bottom: 1px solid rgba(0,0,0,0.06);
+    background: rgba(0,0,0,0.2);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
     display: flex;
     align-items: center;
     gap: 12px;
   }
 
-  .mac-window.dark-mode .browser-bar {
-    background: rgba(255,255,255,0.03);
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-  }
-
   .nav-arrows {
     display: flex;
     gap: 8px;
-    color: #888;
+    color: var(--theme-content-text, #888);
+    opacity: 0.6;
     font-size: 14px;
   }
 
   .url-input {
     flex: 1;
-    background: rgba(255,255,255,0.8);
+    background: rgba(0,0,0,0.3);
     padding: 4px 10px;
     border-radius: 6px;
     font-size: 12px;
     display: flex;
     align-items: center;
     gap: 6px;
-    color: #444;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-  }
-
-  .mac-window.dark-mode .url-input {
-    background: rgba(0,0,0,0.3);
-    color: #bbb;
+    color: var(--theme-content-text, #bbb);
+    border: 1px solid rgba(255,255,255,0.1);
   }
 
   .chat-header {
     padding: 12px;
-    border-bottom: 1px solid rgba(0,0,0,0.06);
+    background: rgba(0,0,0,0.2);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
     display: flex;
     align-items: center;
     gap: 10px;
   }
-  
-  .mac-window.dark-mode .chat-header {
-    border-bottom: 1px solid rgba(255,255,255,0.06);
+
+  .chat-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--theme-content-text, #fff);
+  }
+
+  .chat-status {
+    font-size: 11px;
   }
 
   .avatar {
@@ -765,9 +909,6 @@
     height: 32px;
     border-radius: 8px;
   }
-
-  .chat-name { font-weight: 600; font-size: 14px; }
-  .chat-status { font-size: 11px; color: #10B981; }
 
   .scrollable-content {
     flex: 1;
@@ -786,31 +927,26 @@
     align-items: center;
     gap: 12px;
     padding: 10px;
-    background: rgba(0,0,0,0.03);
+    background: var(--theme-item-bg, rgba(255,255,255,0.05));
     border-radius: 8px;
-    border: 1px solid transparent;
+    border: 1px solid rgba(255,255,255,0.05);
     text-align: left;
     cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .mac-window.dark-mode .action-item {
-    background: rgba(255,255,255,0.04);
+    transition: all 0.15s ease;
+    color: var(--theme-content-text, #fff);
   }
 
   .action-item:hover:not(:disabled) {
-    background: rgba(0,0,0,0.06);
+    background: var(--theme-item-hover, rgba(255,255,255,0.1));
     transform: translateY(-1px);
-  }
-
-  .mac-window.dark-mode .action-item:hover:not(:disabled) {
-    background: rgba(255,255,255,0.08);
+    border-color: var(--theme-accent, rgba(255,255,255,0.1));
   }
 
   .action-item.active {
-    background: #007AFF;
+    background: var(--theme-accent, #007AFF);
     color: white;
-    box-shadow: 0 4px 12px rgba(0,122,255,0.3);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    border-color: transparent;
   }
   
   .action-item.active .item-title,
@@ -827,7 +963,7 @@
     align-items: center;
     justify-content: center;
     font-size: 18px;
-    background: rgba(0,0,0,0.1);
+    background: rgba(255,255,255,0.1);
   }
 
   .item-details {
@@ -841,54 +977,81 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    color: var(--theme-content-text, #fff);
   }
 
   .item-meta {
     font-size: 11px;
-    color: #888;
+    color: var(--theme-content-text, #aaa);
+    opacity: 0.7;
     margin-top: 2px;
     display: flex;
     gap: 6px;
   }
-  
-  .mac-window.dark-mode .item-meta { color: #aaa; }
+
+  .high-risk {
+    color: #ff4757 !important;
+    opacity: 1 !important;
+  }
 
   .run-btn {
     font-size: 11px;
     font-weight: 600;
-    color: #007AFF;
-    background: rgba(0,122,255,0.1);
+    color: var(--theme-accent, #007AFF);
+    background: rgba(255,255,255,0.1);
     padding: 4px 10px;
     border-radius: 12px;
-  }
-  
-  .mac-window.dark-mode .run-btn {
-    color: #0A84FF;
-    background: rgba(10,132,255,0.15);
+    border: 1px solid var(--theme-accent, rgba(255,255,255,0.2));
   }
   
   .action-item.active .run-btn {
     background: rgba(255,255,255,0.2);
     color: white;
+    border-color: rgba(255,255,255,0.3);
   }
 
-  .lock-icon { opacity: 0.5; font-size: 12px; }
+  .lock-badge { 
+    opacity: 0.5; 
+    font-size: 14px; 
+  }
+
+  .action-item.locked {
+    opacity: 0.5;
+  }
 
   .action-item.banned {
-    opacity: 0.5;
-    background: #421111;
+    opacity: 0.4;
+    background: rgba(255, 0, 0, 0.15);
     pointer-events: none;
+    border-color: rgba(255, 0, 0, 0.3);
   }
 
   .terminal-text {
-    font-family: 'Menlo', monospace;
+    font-family: 'Menlo', 'Monaco', 'Consolas', monospace;
     font-size: 12px;
-    color: #2ecc71;
     margin-bottom: 10px;
-    line-height: 1.5;
+    line-height: 1.6;
+    padding: 8px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 6px;
   }
-  .prompt { color: #3498db; }
-  .error { color: #e74c3c; }
-  .success { color: #2ecc71; }
+
+  /* Scrollbar styling for themed windows */
+  .scrollable-content::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .scrollable-content::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollable-content::-webkit-scrollbar-thumb {
+    background: var(--theme-item-bg, rgba(255,255,255,0.1));
+    border-radius: 4px;
+  }
+
+  .scrollable-content::-webkit-scrollbar-thumb:hover {
+    background: var(--theme-item-hover, rgba(255,255,255,0.2));
+  }
 
 </style>

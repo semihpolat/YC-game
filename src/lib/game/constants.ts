@@ -192,6 +192,26 @@ export const INITIAL_NODES: GameNode[] = [
   n('rewrite_rust', 'Rewrite in Rust', 'sins', 0, NodeType.Product, NodeStatus.Unlocked, 90, 50, 'stars', 100, 'Memory safe, but product is dead.'),
   n('k8s', 'Kubernetes Cluster', 'sins', 0, NodeType.Product, NodeStatus.Unlocked, 60, 40, 'cash', -200, 'We have 3 users but we scale infinitely.'),
   n('microservices', 'Microservices', 'sins', 0, NodeType.Product, NodeStatus.Unlocked, 50, 30, 'techDebt', 100, 'Now we need a distributed tracing tool.'),
+
+  // --- CLUSTER: META ADS (The Zuck Machine) ---
+  hub('hub_meta', 'META ADS', 'meta', 'The algorithm knows you better than you know yourself.'),
+  n('fb_boost', 'Boost Facebook Post', 'meta', 2, NodeType.Vanity, NodeStatus.Unlocked, 30, 20, 'users', 50, '$50 to reach 50 bots and your aunt.'),
+  n('ig_reels', 'Instagram Reels Ads', 'meta', 2, NodeType.Growth, NodeStatus.Unlocked, 60, 30, 'users', 200, 'Targeting people scrolling at 2am.'),
+  n('meta_pixel', 'Install Meta Pixel', 'meta', 2, NodeType.Growth, NodeStatus.Unlocked, 20, 10, 'users', 30, 'Tracking everyone everywhere forever.'),
+  n('lookalike', 'Lookalike Audience', 'meta', 2, NodeType.GoldMine, NodeStatus.Unlocked, 80, 40, 'users', 500, 'Finding clones of your best customer.'),
+  n('retarget_ig', 'Retargeting Campaign', 'meta', 2, NodeType.Growth, NodeStatus.Unlocked, 50, 20, 'mrr', 50, 'Following them across the internet until they buy.'),
+  n('influencer_collab', 'IG Influencer Collab', 'meta', 2, NodeType.Vanity, NodeStatus.Unlocked, 70, 60, 'users', 300, 'Pay micro-influencer $500 for 3 story slides.'),
+  n('fb_group', 'Spam FB Groups', 'meta', 2, NodeType.DarkPattern, NodeStatus.Unlocked, 15, 70, 'users', 100, 'Getting banned from entrepreneur groups.'),
+
+  // --- CLUSTER: GOOGLE ADS (The Pay-to-Play) ---
+  hub('hub_gads', 'GOOGLE ADS', 'gads', 'Bidding against your competitors for your own brand name.'),
+  n('search_ads', 'Search Campaign', 'gads', 3, NodeType.Growth, NodeStatus.Unlocked, 70, 30, 'users', 150, 'Paying $5 per click for "best todo app".'),
+  n('brand_bid', 'Bid on Own Brand', 'gads', 3, NodeType.Vanity, NodeStatus.Unlocked, 30, 10, 'users', 20, 'Competitor is bidding on your name. Fight back.'),
+  n('display_network', 'Display Network', 'gads', 3, NodeType.Vanity, NodeStatus.Unlocked, 40, 50, 'users', 80, 'Banner blindness is real. Keep burning.'),
+  n('youtube_preroll', 'YouTube Pre-roll', 'gads', 3, NodeType.Growth, NodeStatus.Unlocked, 90, 40, 'users', 400, '5 seconds before they skip. Make it count.'),
+  n('pmax', 'Performance Max', 'gads', 3, NodeType.GoldMine, NodeStatus.Locked, 100, 60, 'users', 800, 'Let Google\'s AI spend your money everywhere.'),
+  n('remarketing', 'Remarketing List', 'gads', 3, NodeType.Growth, NodeStatus.Unlocked, 45, 20, 'mrr', 40, 'Haunting cart abandoners for 30 days.'),
+  n('competitor_bid', 'Bid on Competitors', 'gads', 3, NodeType.DarkPattern, NodeStatus.Unlocked, 60, 80, 'users', 200, 'Stealing traffic from "notion alternatives".'),
 ];
 
 export const YC_QUESTIONS: YCQuestion[] = [
