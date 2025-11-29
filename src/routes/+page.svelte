@@ -1,4 +1,3 @@
-
 <script lang="ts">
   import { gameStore } from '$lib/game/store';
   import { NodeStatus } from '$lib/game/types';
@@ -16,6 +15,9 @@
   } = state);
 
   $: selectedNode = nodes.find(n => n.id === selectedNodeId);
+
+  // UI State
+  let showYCForm = false;
 
   function handleNodeClick(id: string) {
     gameStore.setNodeSelection(id);
@@ -42,6 +44,10 @@
   function handleCloseEvent() {
       gameStore.closeEvent();
   }
+
+  function handleOpenYCForm() {
+      showYCForm = true;
+  }
 </script>
 
 <div class="flex flex-col h-screen overflow-hidden bg-zinc-950 text-zinc-100 font-sans selection:bg-orange-500/30">
@@ -61,39 +67,39 @@
     <MetricsHUD {metrics} {week} {maxWeeks} {energy} {maxEnergy} />
 
     <!-- MAIN CONTENT -->
-    <div class="flex flex-1 overflow-hidden relative">
+    <div class="flex-1 relative overflow-hidden">
         
-        <!-- GRAPH AREA -->
-        <div class="flex-1 relative">
-           <OmniMap 
-                {nodes} 
-                activeNodeId={selectedNodeId} 
-                onNodeClick={handleNodeClick} 
-            />
-            
-            <!-- LOGS OVERLAY -->
-            <div class="absolute bottom-4 left-4 w-80 h-48 bg-black/80 backdrop-blur-sm border border-zinc-800 rounded-lg p-3 overflow-y-auto font-mono text-xs shadow-xl pointer-events-none mb-16">
-                {#each logs as log, i}
-                    <div class="mb-1.5 border-b border-zinc-900/50 pb-1 {log.includes('>') ? 'text-green-400' : 'text-zinc-400'}">
-                        {log}
-                    </div>
-                {/each}
-            </div>
-
-            <!-- WEEK CONTROL -->
-            <div class="absolute bottom-8 right-8 z-10">
-                <button 
-                    on:click={handleEndWeek}
-                    disabled={isProcessing}
-                    class="bg-white text-black hover:bg-zinc-200 px-8 py-4 rounded-full font-black shadow-[0_0_20px_rgba(255,255,255,0.2)] flex items-center gap-2 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100"
-                >
-                    {isProcessing ? "PROCESSING..." : "END WEEK"} <ArrowRight size={20} />
-                </button>
-            </div>
+        <!-- GRAPH AREA (FULL SCREEN) -->
+        <OmniMap 
+            {nodes} 
+            activeNodeId={selectedNodeId} 
+            onNodeClick={handleNodeClick} 
+            on:openYCForm={handleOpenYCForm}
+        />
+        
+        <!-- LOGS OVERLAY -->
+        <div class="absolute bottom-4 left-4 w-80 h-48 bg-black/80 backdrop-blur-sm border border-zinc-800 rounded-lg p-3 overflow-y-auto font-mono text-xs shadow-xl pointer-events-none mb-16 z-20">
+            {#each logs as log, i}
+                <div class="mb-1.5 border-b border-zinc-900/50 pb-1 {log.includes('>') ? 'text-green-400' : 'text-zinc-400'}">
+                    {log}
+                </div>
+            {/each}
         </div>
 
-        <!-- SIDE PANEL -->
+        <!-- WEEK CONTROL -->
+        <div class="absolute bottom-8 right-8 z-30">
+            <button 
+                on:click={handleEndWeek}
+                disabled={isProcessing}
+                class="bg-white text-black hover:bg-zinc-200 px-8 py-4 rounded-full font-black shadow-[0_0_20px_rgba(255,255,255,0.2)] flex items-center gap-2 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100"
+            >
+                {isProcessing ? "PROCESSING..." : "END WEEK"} <ArrowRight size={20} />
+            </button>
+        </div>
+
+        <!-- YC FORM (OVERLAY) -->
         <YCForm 
+            bind:isOpen={showYCForm}
             questions={YC_QUESTIONS} 
             {metrics} 
             currentWeek={week}

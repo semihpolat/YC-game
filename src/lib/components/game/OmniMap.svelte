@@ -1,7 +1,5 @@
-
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import * as d3 from 'd3';
+  import { onMount, createEventDispatcher } from 'svelte';
   import { NodeStatus, NodeType } from '$lib/game/types';
   import type { GameNode } from '$lib/game/types';
 
@@ -9,229 +7,851 @@
   export let activeNodeId: string | null;
   export let onNodeClick: (nodeId: string) => void;
 
-  let container: HTMLDivElement;
-  let svgElement: SVGSVGElement;
-  let width = 0;
-  let height = 0;
-  let simulation: d3.Simulation<d3.SimulationNodeDatum, undefined>;
+  const dispatch = createEventDispatcher();
 
-  // Color Theme Configuration per Cluster
-  const CLUSTER_THEMES: Record<string, { color: string }> = {
-    'code': { color: '#6366f1' }, // Indigo
-    'infra': { color: '#f97316' }, // Orange
-    'reddit': { color: '#ff4500' }, // Red/Orange
-    'twitter': { color: '#0ea5e9' }, // Sky
-    'linkedin': { color: '#0077b5' }, // Cyan
-    'launch': { color: '#e11d48' }, // Rose
-    'dark': { color: '#71717a' }, // Zinc
-    'sf': { color: '#a855f7' }, // Purple
-    'fund': { color: '#10b981' }, // Emerald
-    'design': { color: '#db2777' }, // Pink
-    'ai': { color: '#7c3aed' }, // Violet
-    'ops': { color: '#64748b' }, // Slate
-    'legal': { color: '#d97706' }, // Amber
-    'sales': { color: '#06b6d4' }, // Cyan
-    'seo': { color: '#84cc16' }, // Lime
-    'content': { color: '#f43f5e' }, // Rose
-    'bio': { color: '#22c55e' }, // Green
-    'security': { color: '#475569' }, // Slate
-    'outsource': { color: '#6b7280' }, // Gray
-    'culture': { color: '#ec4899' }, // Pink
-    'nomad': { color: '#14b8a6' }, // Teal
-    'vc': { color: '#15803d' }, // Green
-    'sins': { color: '#ef4444' }, // Red
+  // --- Canvas State ---
+  let container: HTMLDivElement;
+  let scale = 1;
+  let panX = 0;
+  let panY = 0;
+  let isDraggingCanvas = false;
+  let lastMouseX = 0;
+  let lastMouseY = 0;
+
+  // --- Window Drag State ---
+  let draggedWindow: string | null = null;
+  let zIndexCounter = 100;
+
+  // --- Gesture State ---
+  let isGestureActive = false;
+  let startScale = 1;
+
+  // Group nodes by cluster
+  // Force type assertion to avoid 'unknown' errors in template
+  $: clusters = nodes.reduce((acc, node) => {
+    if (!acc[node.cluster]) acc[node.cluster] = [];
+    acc[node.cluster].push(node);
+    return acc;
+  }, {} as Record<string, GameNode[]>);
+
+  // Helper to avoid type errors in template
+  function getLeafNodes(nodes: unknown): GameNode[] {
+    return (nodes as GameNode[]).filter(n => n.type !== NodeType.Hub);
+  }
+
+  // Layout State
+  let clusterLayout: Record<string, { x: number; y: number; width: number; height: number; z: number }> = {};
+  
+  // Modern App Themes (macOS Style)
+  const APP_CONFIG: Record<string, { title: string; type: 'browser' | 'code' | 'chat' | 'doc' | 'finder'; color: string }> = {
+    'code': { title: 'VS Code - Project', type: 'code', color: '#2C2C32' },
+    'infra': { title: 'AWS Management Console', type: 'browser', color: '#EC7211' },
+    'reddit': { title: 'r/startups - Reddit', type: 'browser', color: '#FF4500' },
+    'twitter': { title: 'X / Home', type: 'browser', color: '#000000' },
+    'linkedin': { title: 'Feed | LinkedIn', type: 'browser', color: '#0A66C2' },
+    'launch': { title: 'Product Hunt - Best New', type: 'browser', color: '#DA552F' },
+    'dark': { title: 'Tor Browser', type: 'browser', color: '#4D2376' },
+    'sf': { title: 'Maps - San Francisco', type: 'finder', color: '#A855F7' },
+    'fund': { title: 'Mercury Bank - Dashboard', type: 'browser', color: '#10B981' },
+    'design': { title: 'Figma - UI Kit', type: 'code', color: '#F24E1E' },
+    'ai': { title: 'ChatGPT 4o', type: 'chat', color: '#10A37F' },
+    'ops': { title: 'Notion - Roadmap', type: 'doc', color: '#FFFFFF' },
+    'legal': { title: 'Term_Sheet_Final_v12.pdf', type: 'finder', color: '#FF3B30' },
+    'sales': { title: 'HubSpot - Contacts', type: 'browser', color: '#FF7A59' },
+    'seo': { title: 'Google Search Console', type: 'browser', color: '#4285F4' },
+    'content': { title: 'TikTok Creative Center', type: 'browser', color: '#FE2C55' },
+    'bio': { title: 'Whoop Dashboard', type: 'browser', color: '#CD2026' },
+    'security': { title: 'Vanta - Compliance', type: 'browser', color: '#2E2E3A' },
+    'outsource': { title: 'Upwork - Messages (3)', type: 'chat', color: '#14A800' },
+    'culture': { title: 'Slack - #general', type: 'chat', color: '#4A154B' },
+    'nomad': { title: 'Airbnb - Canggu, Bali', type: 'browser', color: '#FF5A5F' },
+    'vc': { title: 'Sequoia - Pitch Deck', type: 'finder', color: '#00925D' },
+    'sins': { title: 'Terminal', type: 'code', color: '#000000' },
   };
 
   onMount(() => {
-    if (!container) return;
-    
-    const resizeObserver = new ResizeObserver((entries) => {
-        if (!entries.length) return;
-        const rect = entries[0].contentRect;
-        width = rect.width;
-        height = rect.height;
-        initGraph();
-    });
-    
-    resizeObserver.observe(container);
-    
-    return () => resizeObserver.disconnect();
-  });
+    calculateLayout();
+    // Center initially
+    if (container) {
+        panX = container.clientWidth / 2 - 1500;
+        panY = container.clientHeight / 2 - 1000;
 
-  // React to props changes
-  $: if (width > 0 && height > 0 && nodes) {
-      initGraph();
-  }
-
-  function initGraph() {
-    if (!svgElement || width === 0) return;
-
-    const svg = d3.select(svgElement);
-    svg.selectAll("*").remove();
-
-    const g = svg.append("g");
-    
-    const zoom = d3.zoom()
-        .scaleExtent([0.1, 4])
-        .on("zoom", (event) => {
-            g.attr("transform", event.transform);
-        });
-
-    svg.call(zoom as any);
-
-    // Initial simulation setup
-    const hubs = nodes.filter(n => n.type === NodeType.Hub);
-    const leaves = nodes.filter(n => n.type !== NodeType.Hub);
-    
-    // Create links based on clusters
-    const links: any[] = [];
-    leaves.forEach(node => {
-        const hub = hubs.find(h => h.cluster === node.cluster);
-        if (hub) {
-            links.push({ source: hub.id, target: node.id, type: 'cluster' });
-        }
-    });
-
-    // Connect hubs
-    for (let i = 0; i < hubs.length; i++) {
-        const source = hubs[i];
-        const target1 = hubs[(i + 1) % hubs.length];
-        const target2 = hubs[(i + 3) % hubs.length];
-        links.push({ source: source.id, target: target1.id, type: 'backbone' });
-        links.push({ source: source.id, target: target2.id, type: 'backbone' });
+        // Add native gesture listeners for Safari/Mac Trackpad
+        container.addEventListener('gesturestart', handleGestureStart as any);
+        container.addEventListener('gesturechange', handleGestureChange as any);
+        container.addEventListener('gestureend', handleGestureEnd as any);
+        container.addEventListener('wheel', handleWheel, { passive: false });
     }
 
-    simulation = d3.forceSimulation(nodes as d3.SimulationNodeDatum[])
-        .force("link", d3.forceLink(links).id((d: any) => d.id).distance((d: any) => d.type === 'backbone' ? 600 : 120))
-        .force("charge", d3.forceManyBody().strength((d: any) => d.type === NodeType.Hub ? -2000 : -300))
-        .force("collide", d3.forceCollide().radius((d: any) => d.type === NodeType.Hub ? 150 : 60))
-        .force("center", d3.forceCenter(width / 2, height / 2).strength(0.05));
-
-    // Draw Links
-    const link = g.append("g")
-        .selectAll("line")
-        .data(links)
-        .join("line")
-        .attr("stroke", (d) => d.type === 'backbone' ? "#3f3f46" : "#52525b")
-        .attr("stroke-width", (d) => d.type === 'backbone' ? 4 : 1)
-        .attr("opacity", (d) => d.type === 'backbone' ? 0.2 : 0.4);
-
-    // Draw Nodes
-    const node = g.append("g")
-        .selectAll("foreignObject")
-        .data(nodes)
-        .join("foreignObject")
-        .attr("width", (d) => d.type === NodeType.Hub ? 200 : 140)
-        .attr("height", (d) => d.type === NodeType.Hub ? 200 : 80)
-        .call(d3.drag<any, any>()
-            .on("start", (e, d) => {
-                if (!e.active) simulation.alphaTarget(0.3).restart();
-                d.fx = d.x;
-                d.fy = d.y;
-            })
-            .on("drag", (e, d) => {
-                d.fx = e.x;
-                d.fy = e.y;
-            })
-            .on("end", (e, d) => {
-                if (!e.active) simulation.alphaTarget(0);
-                d.fx = null;
-                d.fy = null;
-            })
-        );
-
-    node.each(function(d: GameNode) {
-        const el = d3.select(this);
-        const theme = CLUSTER_THEMES[d.cluster] || { color: '#71717a' };
-        const isHub = d.type === NodeType.Hub;
-        const isActive = d.id === activeNodeId;
-        const isLocked = d.status === NodeStatus.Locked;
-        const isBanned = d.status === NodeStatus.Banned;
-
-        let html = '';
-        
-        if (isHub) {
-            html = `
-                <div class="w-full h-full flex flex-col items-center justify-center pointer-events-none select-none">
-                    <div class="relative group">
-                        <div class="absolute inset-0 bg-[${theme.color}] opacity-20 blur-3xl rounded-full"></div>
-                        <div class="w-24 h-24 rounded-full bg-zinc-900 border-4 border-[${theme.color}] flex items-center justify-center shadow-[0_0_30px_rgba(0,0,0,0.5)] relative z-10">
-                            <div style="color: ${theme.color}" class="transform scale-150">◉</div>
-                        </div>
-                        <div class="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[${theme.color}] font-black text-sm uppercase tracking-widest whitespace-nowrap bg-zinc-950 px-2 py-1 rounded border border-zinc-800">
-                            ${d.label}
-                        </div>
-                    </div>
-                </div>
-            `;
-        } else {
-            const borderColor = isBanned ? '#ef4444' : (isActive ? '#fff' : theme.color);
-            const bgColor = isLocked ? '#18181b' : '#09090b';
-            const opacity = isLocked ? 0.6 : 1;
-
-            html = `
-                <div class="w-full h-full p-1 transition-all duration-300 ${isActive ? 'scale-110 z-50' : 'hover:scale-105 z-10'}" style="opacity: ${opacity}">
-                    <div class="w-full h-full rounded-lg bg-[${bgColor}] border border-[${borderColor}] shadow-lg flex flex-col p-2 relative overflow-hidden group">
-                        ${isBanned ? '<div class="absolute inset-0 bg-red-900/50 flex items-center justify-center font-black text-red-500 transform -rotate-12 z-20">BANNED</div>' : ''}
-                        
-                        <div class="flex justify-between items-start mb-1">
-                            <div class="w-2 h-2 rounded-full" style="background-color: ${theme.color}"></div>
-                            ${isLocked ? '<div class="text-zinc-500">🔒</div>' : ''}
-                        </div>
-                        
-                        <div class="font-bold text-zinc-100 text-[10px] leading-tight mb-1">
-                            ${d.label}
-                        </div>
-                        
-                        <div class="mt-auto flex justify-between items-end border-t border-zinc-800 pt-1">
-                            <div class="text-[8px] text-zinc-500 font-mono">
-                                ${d.energyCost}⚡
-                            </div>
-                             <div class="text-[8px] ${d.risk > 30 ? 'text-red-500' : 'text-zinc-500'} font-mono">
-                                ${d.risk > 0 ? d.risk + '% Risk' : 'Safe'}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
+    return () => {
+        if (container) {
+            container.removeEventListener('gesturestart', handleGestureStart as any);
+            container.removeEventListener('gesturechange', handleGestureChange as any);
+            container.removeEventListener('gestureend', handleGestureEnd as any);
+            container.removeEventListener('wheel', handleWheel);
         }
+    };
+  });
 
-        el.html(html);
+  function calculateLayout() {
+    const clusterKeys = Object.keys(clusters);
+    const GRID_GAP_X = 500;
+    const GRID_GAP_Y = 600;
+    const COLS = 5;
 
-        if (!isHub) {
-            el.on("click", (e) => {
-                e.stopPropagation();
-                if (!isBanned) onNodeClick(d.id);
-            });
-        }
+    clusterKeys.forEach((cluster, i) => {
+      const col = i % COLS;
+      const row = Math.floor(i / COLS);
+      
+      const offsetX = (row % 2 === 0) ? 0 : 100; 
+      
+      clusterLayout[cluster] = {
+        x: col * GRID_GAP_X + offsetX + (Math.random() * 50),
+        y: row * GRID_GAP_Y + (Math.random() * 50),
+        width: 380,
+        height: 450,
+        z: i + 1
+      };
     });
-
-    simulation.on("tick", () => {
-        link
-            .attr("x1", (d: any) => d.source.x)
-            .attr("y1", (d: any) => d.source.y)
-            .attr("x2", (d: any) => d.target.x)
-            .attr("y2", (d: any) => d.target.y);
-
-        node
-            .attr("x", (d: any) => d.x - (d.type === NodeType.Hub ? 100 : 70))
-            .attr("y", (d: any) => d.y - (d.type === NodeType.Hub ? 100 : 40));
-    });
+    clusterLayout = clusterLayout;
   }
+
+  // --- Native Gesture Handlers (Safari) ---
+  function handleGestureStart(e: any) {
+    e.preventDefault();
+    isGestureActive = true;
+    startScale = scale;
+  }
+
+  function handleGestureChange(e: any) {
+    e.preventDefault();
+    if (!isGestureActive) return;
+    
+    // Smooth native-like zoom
+    const newScale = Math.min(Math.max(0.1, startScale * e.scale), 4);
+    
+    // Optional: Zoom towards center of gesture (requires clientX/Y which gesture event might lack or provide)
+    // Keeping simple center zoom or current pan zoom for stability
+    // A better approach is to find the cursor pos if available, but e.clientX might be undefined on gesture events
+    // We'll stick to updating scale directly which feels natural on Mac
+    scale = newScale;
+  }
+
+  function handleGestureEnd(e: any) {
+    e.preventDefault();
+    isGestureActive = false;
+  }
+
+  // --- Wheel Handler (Chrome/Edge Pinch + All Pan) ---
+  function handleWheel(e: WheelEvent) {
+    e.preventDefault();
+    if (isGestureActive) return; // Prioritize native gesture
+
+    // Detect Pinch gesture (trackpad) vs Pan
+    // Chrome/Safari sets ctrlKey to true during a pinch gesture on trackpad
+    const isPinch = e.ctrlKey; 
+
+    if (isPinch) {
+      // Smooth zoom for pinch
+      const zoomSensitivity = 0.01; // Increased sensitivity
+      const newScale = Math.min(Math.max(0.1, scale - e.deltaY * zoomSensitivity), 4);
+      
+      // Zoom towards cursor logic
+      const rect = container.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      // Calculate mouse position in world coordinates
+      const worldX = (mouseX - panX) / scale;
+      const worldY = (mouseY - panY) / scale;
+
+      // Update scale
+      scale = newScale;
+
+      // Update pan to keep worldX/worldY under mouse
+      panX = mouseX - worldX * scale;
+      panY = mouseY - worldY * scale;
+    } else {
+      // Regular pan (Two finger scroll on trackpad or Mouse Wheel)
+      // We simply subtract delta from pan position
+      panX -= e.deltaX;
+      panY -= e.deltaY;
+    }
+  }
+
+  function startPan(e: MouseEvent) {
+    // Only pan if clicking directly on background
+    if ((e.target as HTMLElement).closest('.mac-window') || (e.target as HTMLElement).closest('.overlay-ui') || (e.target as HTMLElement).closest('.yc-apply-container')) return;
+    
+    isDraggingCanvas = true;
+    lastMouseX = e.clientX;
+    lastMouseY = e.clientY;
+    container.style.cursor = 'grabbing';
+  }
+
+  function doPan(e: MouseEvent) {
+    if (isDraggingCanvas) {
+      const dx = e.clientX - lastMouseX;
+      const dy = e.clientY - lastMouseY;
+      panX += dx;
+      panY += dy;
+      lastMouseX = e.clientX;
+      lastMouseY = e.clientY;
+      return;
+    }
+    
+    if (draggedWindow) {
+      // Drag window logic
+      const deltaX = (e.clientX - lastMouseX) / scale;
+      const deltaY = (e.clientY - lastMouseY) / scale;
+      
+      clusterLayout[draggedWindow].x += deltaX;
+      clusterLayout[draggedWindow].y += deltaY;
+      
+      lastMouseX = e.clientX;
+      lastMouseY = e.clientY;
+      
+      // Trigger reactivity
+      clusterLayout = clusterLayout;
+    }
+  }
+
+  function endPan() {
+    isDraggingCanvas = false;
+    draggedWindow = null;
+    if (container) container.style.cursor = 'default';
+  }
+
+  // --- Window Dragging ---
+
+  function startWindowDrag(e: MouseEvent, cluster: string) {
+    e.stopPropagation(); // Prevent canvas pan
+    draggedWindow = cluster;
+    
+    // Bring to front
+    zIndexCounter++;
+    clusterLayout[cluster].z = zIndexCounter;
+    clusterLayout = clusterLayout;
+
+    lastMouseX = e.clientX;
+    lastMouseY = e.clientY;
+  }
+
+  function getNodeStyle(node: GameNode) {
+    const isLocked = node.status === NodeStatus.Locked;
+    const isBanned = node.status === NodeStatus.Banned;
+    const isActive = node.id === activeNodeId;
+    return { isLocked, isBanned, isActive };
+  }
+
+  function handleNodeClick(node: GameNode) {
+    if (node.status !== NodeStatus.Banned && node.type !== NodeType.Hub) {
+      onNodeClick(node.id);
+    }
+  }
+  
+  function openYCApplication() {
+    dispatch('openYCForm');
+  }
+
+  $: connections = Object.keys(clusterLayout).map((key, i, arr) => {
+      const current = clusterLayout[key];
+      const nextKey = arr[i + 1];
+      if (!nextKey) return null;
+      
+      const next = clusterLayout[nextKey];
+      if (Math.abs(current.x - next.x) > 1500 && Math.abs(current.y - next.y) > 1500) return null;
+
+      return {
+        x1: current.x + current.width / 2,
+        y1: current.y + current.height / 2,
+        x2: next.x + next.width / 2,
+        y2: next.y + next.height / 2
+      };
+  }).filter((c): c is {x1: number, y1: number, x2: number, y2: number} => c !== null);
+
 </script>
 
-<div bind:this={container} class="w-full h-full bg-[#09090b] relative overflow-hidden">
-  <!-- Background Grid Pattern (CSS) -->
-  <div class="absolute inset-0 opacity-10 pointer-events-none" 
-       style="background-image: linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px); background-size: 40px 40px;">
+<svelte:window on:mouseup={endPan} />
+
+<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+<div 
+  role="application"
+  aria-label="Infinite Canvas Map"
+  bind:this={container}
+  class="infinite-canvas"
+  on:mousedown={startPan}
+  on:mousemove={doPan}
+>
+  <div 
+    class="grid-background"
+    style="
+      background-position: {panX}px {panY}px;
+      background-size: {50 * scale}px {50 * scale}px;
+    "
+  ></div>
+
+  <div 
+    class="transform-layer"
+    style="transform: translate({panX}px, {panY}px) scale({scale});"
+  >
+    <svg class="connections-svg">
+      {#each connections as conn}
+        <line 
+          x1={conn.x1} y1={conn.y1} 
+          x2={conn.x2} y2={conn.y2} 
+          stroke="rgba(255,255,255,0.1)" 
+          stroke-width="4" 
+          stroke-dasharray="10,10"
+        />
+      {/each}
+    </svg>
+
+    {#each Object.entries(clusters) as [cluster, clusterNodes] (cluster)}
+      {#if clusterLayout[cluster]}
+        {@const config = APP_CONFIG[cluster] || { title: cluster, type: 'finder', color: '#666' }}
+        {@const layout = clusterLayout[cluster]}
+        {@const leafNodes = getLeafNodes(clusterNodes)}
+        
+        <!-- svelte-ignore a11y-no-static-element-interactions -->
+        <div 
+          class="mac-window"
+          class:dark-mode={['code', 'sins', 'culture', 'security', 'dark'].includes(cluster)}
+          style="
+            left: {layout.x}px;
+            top: {layout.y}px;
+            width: {layout.width}px;
+            height: {layout.height}px;
+            z-index: {layout.z};
+          "
+          on:mousedown|stopPropagation
+        >
+          <div 
+            class="window-header cursor-move"
+            style="background: {config.type === 'code' || cluster === 'sins' ? '#1e1e1e' : '#f5f5f5'}"
+            on:mousedown={(e) => startWindowDrag(e, cluster)}
+          >
+            <div class="traffic-lights">
+              <div class="light close"></div>
+              <div class="light minimize"></div>
+              <div class="light maximize"></div>
+            </div>
+            <div class="window-title" style="color: {config.type === 'code' || cluster === 'sins' ? '#999' : '#333'}">
+              {config.title}
+            </div>
+          </div>
+
+          <div class="window-content" class:code-bg={config.type === 'code'} class:terminal-bg={cluster === 'sins'}>
+            {#if config.type === 'browser'}
+              <div class="browser-bar">
+                <div class="nav-arrows">
+                  <span>←</span><span>→</span><span>↻</span>
+                        </div>
+                <div class="url-input">
+                  <span class="lock-icon">🔒</span>
+                  yc-simulator.com/{cluster}
+                        </div>
+                    </div>
+            {:else if config.type === 'chat'}
+              <div class="chat-header">
+                <div class="avatar" style="background: {config.color}"></div>
+                <div class="chat-info">
+                  <div class="chat-name">{config.title.split(' ')[0]}</div>
+                  <div class="chat-status">Online</div>
+                </div>
+              </div>
+            {/if}
+
+            <div class="scrollable-content">
+              {#if cluster === 'sins'}
+                <div class="terminal-text">
+                  <span class="prompt">user@yc-sim:~$</span> ./check_status.sh<br>
+                  <span class="success">✔</span> Infra scaling... OK<br>
+                  <span class="error">✖</span> Tech debt... CRITICAL<br>
+                  <span class="prompt">user@yc-sim:~$</span> _<br>
+                </div>
+              {/if}
+
+              <div class="nodes-list">
+                {#each leafNodes as node (node.id)}
+                  {@const style = getNodeStyle(node)}
+                  <button 
+                    class="action-item"
+                    class:locked={style.isLocked}
+                    class:banned={style.isBanned}
+                    class:active={style.isActive}
+                    class:risk-high={node.risk > 40}
+                    on:click={() => handleNodeClick(node)}
+                    disabled={style.isBanned}
+                  >
+                    <div class="item-icon" style="background: {config.color}20; color: {config.color}">
+                      {#if node.type === NodeType.Vanity}📈
+                      {:else if node.type === NodeType.DarkPattern}💀
+                      {:else if node.type === NodeType.GoldMine}💎
+                      {:else if node.type === NodeType.Growth}🚀
+                      {:else if node.type === NodeType.IRL}☕
+                      {:else}⚡
+                      {/if}
+                        </div>
+                        
+                    <div class="item-details">
+                      <div class="item-title">{node.label}</div>
+                      <div class="item-meta">
+                        <span class="cost">-{node.energyCost}⚡</span>
+                        <span class="risk" class:text-red-500={node.risk > 30}>
+                          {node.risk > 0 ? `${node.risk}% Risk` : 'Safe'}
+                        </span>
+                      </div>
+                        </div>
+                        
+                    {#if style.isLocked}
+                      <div class="lock-icon">🔒</div>
+                    {:else}
+                      <div class="run-btn">Run</div>
+                    {/if}
+                  </button>
+                {/each}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+      {/if}
+    {/each}
   </div>
   
-  <svg bind:this={svgElement} class="w-full h-full cursor-move" />
+  <!-- Fixed UI Elements -->
   
-  <div class="absolute bottom-4 left-4 pointer-events-none select-none">
-      <div class="bg-zinc-900/80 backdrop-blur border border-zinc-800 p-2 rounded text-[10px] text-zinc-500 font-mono">
-          NODES_ONLINE: {nodes.length} <br/>
-          SYSTEM_STATUS: UNSTABLE
+  <!-- YC Application Button (Top Right) -->
+  <div class="yc-apply-container">
+    <button class="yc-apply-btn" on:click={openYCApplication}>
+      <span class="yc-logo">Y</span>
+      <span class="yc-text">Apply to YC S24</span>
+      <span class="yc-status-dot"></span>
+    </button>
+  </div>
+
+  <!-- Zoom Controls (Top Left) -->
+  <div class="overlay-ui-top-left">
+    <div class="minimap-controls">
+      <button on:click={() => scale = Math.min(scale + 0.1, 4)}>+</button>
+      <div class="scale-display">{Math.round(scale * 100)}%</div>
+      <button on:click={() => scale = Math.max(0.1, scale - 0.1)}>-</button>
+      <button class="reset-btn" on:click={() => { if(container) { panX = container.clientWidth/2 - 1500; panY = container.clientHeight/2 - 1000; scale = 1; }}}>
+        ⟲
+      </button>
       </div>
   </div>
+
 </div>
+
+<style>
+  :global(body) {
+    margin: 0;
+    overflow: hidden;
+    background: #1a1a1a;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  }
+
+  .infinite-canvas {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    cursor: default;
+    background: #0f0f12;
+    touch-action: none;
+  }
+
+  .grid-background {
+    position: absolute;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    pointer-events: none;
+  }
+
+  .transform-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: 0 0;
+    will-change: transform;
+  }
+
+  .connections-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 10000px;
+    height: 10000px;
+    pointer-events: none;
+    overflow: visible;
+    z-index: 0;
+  }
+
+  /* YC Apply Button */
+  .yc-apply-container {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 2000;
+  }
+
+  .yc-apply-btn {
+    background: #ff6600;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(255, 102, 0, 0.4);
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+
+  .yc-apply-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(255, 102, 0, 0.5);
+  }
+
+  .yc-apply-btn:active {
+    transform: translateY(0);
+  }
+
+  .yc-logo {
+    background: white;
+    color: #ff6600;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+  }
+
+  .yc-status-dot {
+    width: 8px;
+    height: 8px;
+    background: #fff;
+    border-radius: 50%;
+    animation: blink 2s infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  /* Controls */
+  .overlay-ui-top-left {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 2000;
+  }
+
+  .minimap-controls {
+    background: rgba(30,30,30,0.8);
+    backdrop-filter: blur(10px);
+    padding: 6px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  }
+
+  .minimap-controls button {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: none;
+    background: rgba(255,255,255,0.1);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    transition: background 0.2s;
+  }
+
+  .minimap-controls button:hover {
+    background: rgba(255,255,255,0.2);
+  }
+
+  .reset-btn {
+    font-size: 14px !important;
+  }
+
+  .scale-display {
+    text-align: center;
+    color: #aaa;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 0;
+  }
+
+  /* Window Styling */
+  .mac-window {
+    position: absolute;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 
+      0 20px 60px rgba(0,0,0,0.3),
+      0 0 0 1px rgba(0,0,0,0.05);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow 0.2s;
+  }
+
+  .mac-window:hover {
+    box-shadow: 
+      0 40px 100px rgba(0,0,0,0.5),
+      0 0 0 1px rgba(0,0,0,0.1);
+  }
+
+  .mac-window.dark-mode {
+    background: #1e1e1e;
+    box-shadow: 
+      0 20px 60px rgba(0,0,0,0.6),
+      0 0 0 1px rgba(255,255,255,0.1);
+  }
+
+  .window-header {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    flex-shrink: 0;
+    cursor: grab;
+  }
+  
+  .window-header:active {
+    cursor: grabbing;
+  }
+
+  .mac-window.dark-mode .window-header {
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .traffic-lights {
+    position: absolute;
+    left: 14px;
+    display: flex;
+    gap: 8px;
+  }
+
+  .light { width: 12px; height: 12px; border-radius: 50%; }
+  .light.close { background: #ff5f57; }
+  .light.minimize { background: #febc2e; }
+  .light.maximize { background: #28c840; }
+
+  .window-title {
+    font-size: 13px;
+    font-weight: 600;
+    opacity: 0.9;
+    pointer-events: none;
+  }
+
+  .window-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .browser-bar {
+    padding: 8px 12px;
+    background: rgba(0,0,0,0.03);
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .mac-window.dark-mode .browser-bar {
+    background: rgba(255,255,255,0.03);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .nav-arrows {
+    display: flex;
+    gap: 8px;
+    color: #888;
+    font-size: 14px;
+  }
+
+  .url-input {
+    flex: 1;
+    background: rgba(255,255,255,0.8);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #444;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  }
+
+  .mac-window.dark-mode .url-input {
+    background: rgba(0,0,0,0.3);
+    color: #bbb;
+  }
+
+  .chat-header {
+    padding: 12px;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .mac-window.dark-mode .chat-header {
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+  }
+
+  .chat-name { font-weight: 600; font-size: 14px; }
+  .chat-status { font-size: 11px; color: #10B981; }
+
+  .scrollable-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+  }
+  
+  .nodes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .action-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    background: rgba(0,0,0,0.03);
+    border-radius: 8px;
+    border: 1px solid transparent;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .mac-window.dark-mode .action-item {
+    background: rgba(255,255,255,0.04);
+  }
+
+  .action-item:hover:not(:disabled) {
+    background: rgba(0,0,0,0.06);
+    transform: translateY(-1px);
+  }
+
+  .mac-window.dark-mode .action-item:hover:not(:disabled) {
+    background: rgba(255,255,255,0.08);
+  }
+
+  .action-item.active {
+    background: #007AFF;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0,122,255,0.3);
+  }
+  
+  .action-item.active .item-title,
+  .action-item.active .item-meta,
+  .action-item.active .cost {
+    color: white;
+  }
+
+  .item-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    background: rgba(0,0,0,0.1);
+  }
+
+  .item-details {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .item-title {
+    font-weight: 500;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .item-meta {
+    font-size: 11px;
+    color: #888;
+    margin-top: 2px;
+    display: flex;
+    gap: 6px;
+  }
+  
+  .mac-window.dark-mode .item-meta { color: #aaa; }
+
+  .run-btn {
+    font-size: 11px;
+    font-weight: 600;
+    color: #007AFF;
+    background: rgba(0,122,255,0.1);
+    padding: 4px 10px;
+    border-radius: 12px;
+  }
+  
+  .mac-window.dark-mode .run-btn {
+    color: #0A84FF;
+    background: rgba(10,132,255,0.15);
+  }
+  
+  .action-item.active .run-btn {
+    background: rgba(255,255,255,0.2);
+    color: white;
+  }
+
+  .lock-icon { opacity: 0.5; font-size: 12px; }
+
+  .action-item.banned {
+    opacity: 0.5;
+    background: #421111;
+    pointer-events: none;
+  }
+
+  .terminal-text {
+    font-family: 'Menlo', monospace;
+    font-size: 12px;
+    color: #2ecc71;
+    margin-bottom: 10px;
+    line-height: 1.5;
+  }
+  .prompt { color: #3498db; }
+  .error { color: #e74c3c; }
+  .success { color: #2ecc71; }
+
+</style>

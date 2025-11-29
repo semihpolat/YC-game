@@ -1,4 +1,3 @@
-
 <script lang="ts">
   import { CheckCircle, Circle, AlertCircle, ChevronRight, ChevronLeft } from 'lucide-svelte';
   import type { GameMetrics, YCQuestion } from '$lib/game/types';
@@ -8,31 +7,24 @@
   export let canApply: boolean;
   export let currentWeek: number;
   export let onApply: () => void;
-
-  let isOpen = true;
+  export let isOpen = false; // Exposed prop
 
   $: completionPercentage = Math.round((questions.filter(q => q.condition(metrics)).length / questions.length) * 100);
 </script>
 
 {#if !isOpen}
-  <!-- Collapsed State -->
+  <!-- Collapsed State (Floating Button trigger handled by OmniMap mostly, but this is a fallback sidebar trigger) -->
+  <!-- We can hide this if OmniMap handles the trigger, or keep it as a side tab -->
   <div 
-    class="h-full bg-zinc-900 border-l border-zinc-800 w-12 shrink-0 flex flex-col items-center py-4 cursor-pointer hover:bg-zinc-800 transition-colors z-40" 
+    class="absolute right-0 top-1/2 -translate-y-1/2 bg-zinc-900 border-l border-zinc-800 p-2 rounded-l-lg cursor-pointer hover:bg-zinc-800 transition-all z-[40] shadow-xl" 
     on:click={() => isOpen = true}
     title="Open YC Application"
     on:keydown={() => {}}
     role="button"
     tabindex="0"
   >
-     <img src="https://upload.wikimedia.org/wikipedia/commons/b/b2/Y_Combinator_logo.svg" alt="YC" class="w-6 h-6 rounded mb-6" />
-     
-     <div class="flex-1 flex items-center justify-center">
-         <span class="text-xs font-bold text-zinc-400 tracking-widest uppercase whitespace-nowrap" style="writing-mode: vertical-rl; transform: rotate(180deg);">
-            YC APPLICATION
-         </span>
-     </div>
-
-     <div class="mt-6 flex flex-col items-center gap-2">
+     <div class="flex flex-col items-center gap-2">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/b/b2/Y_Combinator_logo.svg" alt="YC" class="w-8 h-8 rounded" />
         <span class="text-[10px] font-mono font-bold {completionPercentage === 100 ? 'text-green-500' : 'text-orange-500'}">
             {completionPercentage}%
         </span>
@@ -40,8 +32,8 @@
      </div>
   </div>
 {:else}
-  <!-- Expanded State -->
-  <div class="h-full flex flex-col bg-zinc-900 border-l border-zinc-800 w-full md:w-96 shrink-0 overflow-hidden transition-all relative z-40">
+  <!-- Overlay State -->
+  <div class="absolute right-0 top-0 h-full flex flex-col bg-zinc-900/95 backdrop-blur-md border-l border-zinc-800 w-full md:w-96 shrink-0 overflow-hidden transition-all z-[200] shadow-2xl">
     <div class="p-4 bg-zinc-900 border-b border-zinc-800 flex justify-between items-start">
       <div>
           <h2 class="text-lg font-bold text-white flex items-center gap-2">
