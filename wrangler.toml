@@ -1,0 +1,9 @@
+name = "yc-game"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = "build"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "yc-game-leaderboard"
+database_id = "de1599b7-6ff5-44e3-abd6-48a780456f06"
+

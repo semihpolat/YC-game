@@ -1,6 +1,6 @@
 
 <script lang="ts">
-  import { DollarSign, Users, Github, TrendingUp, Brain, Eye } from 'lucide-svelte';
+  import { DollarSign, Users, Github, TrendingUp, Brain, Eye, Settings, Trophy, X } from 'lucide-svelte';
   import type { GameMetrics } from '$lib/game/types';
 
   export let metrics: GameMetrics;
@@ -9,8 +9,18 @@
   export let energy: number;
   export let maxEnergy: number;
 
+  let showSettingsMenu = false;
+
   $: timeProgress = (week / maxWeeks) * 100;
   $: energyProgress = (energy / maxEnergy) * 100;
+
+  function toggleSettings() {
+    showSettingsMenu = !showSettingsMenu;
+  }
+
+  function closeSettings() {
+    showSettingsMenu = false;
+  }
 </script>
 
 <div class="w-full border-b border-zinc-800 bg-zinc-950 sticky top-0 z-50 shadow-2xl shadow-zinc-950/50">
@@ -93,9 +103,45 @@
     </div>
 
     <!-- Right: Controls -->
-    <div class="hidden md:block text-right">
-        <div class="text-xs text-zinc-500 font-mono">YC BATCH W24</div>
-        <div class="text-xs text-green-500 font-mono animate-pulse">APPLICATIONS OPEN</div>
+    <div class="flex items-center gap-4">
+      <div class="hidden md:block text-right">
+          <div class="text-xs text-zinc-500 font-mono">YC BATCH W24</div>
+          <div class="text-xs text-green-500 font-mono animate-pulse">APPLICATIONS OPEN</div>
+      </div>
+      
+      <!-- Settings Button -->
+      <div class="relative">
+        <button 
+          on:click={toggleSettings}
+          class="p-2 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-600 transition-all hover:bg-zinc-800 group"
+          aria-label="Settings"
+        >
+          <Settings size={18} class="text-zinc-400 group-hover:text-white transition-colors {showSettingsMenu ? 'animate-spin' : ''}" />
+        </button>
+        
+        <!-- Dropdown Menu -->
+        {#if showSettingsMenu}
+          <div class="absolute right-0 top-full mt-2 w-48 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl overflow-hidden z-[100]">
+            <a 
+              href="/leaderboard" 
+              class="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800 transition-colors text-zinc-300 hover:text-white"
+              on:click={closeSettings}
+            >
+              <Trophy size={16} class="text-orange-500" />
+              <span class="font-medium">Leaderboard</span>
+            </a>
+          </div>
+        {/if}
+      </div>
     </div>
   </div>
 </div>
+
+<!-- Click outside to close -->
+{#if showSettingsMenu}
+  <button 
+    class="fixed inset-0 z-40 cursor-default" 
+    on:click={closeSettings}
+    aria-label="Close menu"
+  ></button>
+{/if}
