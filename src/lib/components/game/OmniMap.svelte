@@ -3,6 +3,30 @@
   import { NodeStatus, NodeType } from '$lib/game/types';
   import type { GameNode } from '$lib/game/types';
 
+  // Favicon imports
+  import faviconVscode from '$lib/assets/favicons/vscode.png';
+  import faviconAws from '$lib/assets/favicons/aws.png';
+  import faviconReddit from '$lib/assets/favicons/reddit.png';
+  import faviconTwitter from '$lib/assets/favicons/twitter.png';
+  import faviconLinkedin from '$lib/assets/favicons/linkedin.png';
+  import faviconProducthunt from '$lib/assets/favicons/producthunt.png';
+  import faviconTor from '$lib/assets/favicons/tor.png';
+  import faviconMaps from '$lib/assets/favicons/maps.png';
+  import faviconMercury from '$lib/assets/favicons/mercury.png';
+  import faviconFigma from '$lib/assets/favicons/figma.png';
+  import faviconOpenai from '$lib/assets/favicons/openai.png';
+  import faviconNotion from '$lib/assets/favicons/notion.png';
+  import faviconStripe from '$lib/assets/favicons/stripe.png';
+  import faviconHubspot from '$lib/assets/favicons/hubspot.png';
+  import faviconGoogle from '$lib/assets/favicons/google.png';
+  import faviconTiktok from '$lib/assets/favicons/tiktok.png';
+  import faviconWhoop from '$lib/assets/favicons/whoop.png';
+  import faviconVanta from '$lib/assets/favicons/vanta.png';
+  import faviconUpwork from '$lib/assets/favicons/upwork.png';
+  import faviconSlack from '$lib/assets/favicons/slack.png';
+  import faviconAirbnb from '$lib/assets/favicons/airbnb.png';
+  import faviconSequoia from '$lib/assets/favicons/sequoia.png';
+
   export let nodes: GameNode[];
   export let activeNodeId: string | null;
   export let onNodeClick: (nodeId: string) => void;
@@ -42,31 +66,31 @@
   // Layout State
   let clusterLayout: Record<string, { x: number; y: number; width: number; height: number; z: number }> = {};
   
-  // Modern App Themes (macOS Style)
-  const APP_CONFIG: Record<string, { title: string; type: 'browser' | 'code' | 'chat' | 'doc' | 'finder'; color: string }> = {
-    'code': { title: 'VS Code - Project', type: 'code', color: '#2C2C32' },
-    'infra': { title: 'AWS Management Console', type: 'browser', color: '#EC7211' },
-    'reddit': { title: 'r/startups - Reddit', type: 'browser', color: '#FF4500' },
-    'twitter': { title: 'X / Home', type: 'browser', color: '#000000' },
-    'linkedin': { title: 'Feed | LinkedIn', type: 'browser', color: '#0A66C2' },
-    'launch': { title: 'Product Hunt - Best New', type: 'browser', color: '#DA552F' },
-    'dark': { title: 'Tor Browser', type: 'browser', color: '#4D2376' },
-    'sf': { title: 'Maps - San Francisco', type: 'finder', color: '#A855F7' },
-    'fund': { title: 'Mercury Bank - Dashboard', type: 'browser', color: '#10B981' },
-    'design': { title: 'Figma - UI Kit', type: 'code', color: '#F24E1E' },
-    'ai': { title: 'ChatGPT 4o', type: 'chat', color: '#10A37F' },
-    'ops': { title: 'Notion - Roadmap', type: 'doc', color: '#FFFFFF' },
-    'legal': { title: 'Term_Sheet_Final_v12.pdf', type: 'finder', color: '#FF3B30' },
-    'sales': { title: 'HubSpot - Contacts', type: 'browser', color: '#FF7A59' },
-    'seo': { title: 'Google Search Console', type: 'browser', color: '#4285F4' },
-    'content': { title: 'TikTok Creative Center', type: 'browser', color: '#FE2C55' },
-    'bio': { title: 'Whoop Dashboard', type: 'browser', color: '#CD2026' },
-    'security': { title: 'Vanta - Compliance', type: 'browser', color: '#2E2E3A' },
-    'outsource': { title: 'Upwork - Messages (3)', type: 'chat', color: '#14A800' },
-    'culture': { title: 'Slack - #general', type: 'chat', color: '#4A154B' },
-    'nomad': { title: 'Airbnb - Canggu, Bali', type: 'browser', color: '#FF5A5F' },
-    'vc': { title: 'Sequoia - Pitch Deck', type: 'finder', color: '#00925D' },
-    'sins': { title: 'Terminal', type: 'code', color: '#000000' },
+  // Modern App Themes (macOS Style) with Favicons
+  const APP_CONFIG: Record<string, { title: string; type: 'browser' | 'code' | 'chat' | 'doc' | 'finder'; color: string; favicon: string }> = {
+    'code': { title: 'VS Code - Project', type: 'code', color: '#2C2C32', favicon: faviconVscode },
+    'infra': { title: 'AWS Management Console', type: 'browser', color: '#EC7211', favicon: faviconAws },
+    'reddit': { title: 'r/startups - Reddit', type: 'browser', color: '#FF4500', favicon: faviconReddit },
+    'twitter': { title: 'X / Home', type: 'browser', color: '#000000', favicon: faviconTwitter },
+    'linkedin': { title: 'Feed | LinkedIn', type: 'browser', color: '#0A66C2', favicon: faviconLinkedin },
+    'launch': { title: 'Product Hunt - Best New', type: 'browser', color: '#DA552F', favicon: faviconProducthunt },
+    'dark': { title: 'Tor Browser', type: 'browser', color: '#4D2376', favicon: faviconTor },
+    'sf': { title: 'Maps - San Francisco', type: 'finder', color: '#A855F7', favicon: faviconMaps },
+    'fund': { title: 'Mercury Bank - Dashboard', type: 'browser', color: '#10B981', favicon: faviconMercury },
+    'design': { title: 'Figma - UI Kit', type: 'code', color: '#F24E1E', favicon: faviconFigma },
+    'ai': { title: 'ChatGPT 4o', type: 'chat', color: '#10A37F', favicon: faviconOpenai },
+    'ops': { title: 'Notion - Roadmap', type: 'doc', color: '#FFFFFF', favicon: faviconNotion },
+    'legal': { title: 'Term_Sheet_Final_v12.pdf', type: 'finder', color: '#FF3B30', favicon: faviconStripe },
+    'sales': { title: 'HubSpot - Contacts', type: 'browser', color: '#FF7A59', favicon: faviconHubspot },
+    'seo': { title: 'Google Search Console', type: 'browser', color: '#4285F4', favicon: faviconGoogle },
+    'content': { title: 'TikTok Creative Center', type: 'browser', color: '#FE2C55', favicon: faviconTiktok },
+    'bio': { title: 'Whoop Dashboard', type: 'browser', color: '#CD2026', favicon: faviconWhoop },
+    'security': { title: 'Vanta - Compliance', type: 'browser', color: '#2E2E3A', favicon: faviconVanta },
+    'outsource': { title: 'Upwork - Messages (3)', type: 'chat', color: '#14A800', favicon: faviconUpwork },
+    'culture': { title: 'Slack - #general', type: 'chat', color: '#4A154B', favicon: faviconSlack },
+    'nomad': { title: 'Airbnb - Canggu, Bali', type: 'browser', color: '#FF5A5F', favicon: faviconAirbnb },
+    'vc': { title: 'Sequoia - Pitch Deck', type: 'finder', color: '#00925D', favicon: faviconSequoia },
+    'sins': { title: 'Terminal', type: 'code', color: '#000000', favicon: faviconVscode },
   };
 
   onMount(() => {
@@ -309,7 +333,7 @@
 
     {#each Object.entries(clusters) as [cluster, clusterNodes] (cluster)}
       {#if clusterLayout[cluster]}
-        {@const config = APP_CONFIG[cluster] || { title: cluster, type: 'finder', color: '#666' }}
+        {@const config = APP_CONFIG[cluster] || { title: cluster, type: 'finder', color: '#666', favicon: '' }}
         {@const layout = clusterLayout[cluster]}
         {@const leafNodes = getLeafNodes(clusterNodes)}
         
@@ -337,6 +361,9 @@
               <div class="light maximize"></div>
             </div>
             <div class="window-title" style="color: {config.type === 'code' || cluster === 'sins' ? '#999' : '#333'}">
+              {#if config.favicon}
+                <img src={config.favicon} alt="" class="window-favicon" />
+              {/if}
               {config.title}
             </div>
           </div>
@@ -663,6 +690,16 @@
     font-weight: 600;
     opacity: 0.9;
     pointer-events: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .window-favicon {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    object-fit: contain;
   }
 
   .window-content {
