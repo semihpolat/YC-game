@@ -5,6 +5,7 @@
   import MetricsHUD from '$lib/components/game/MetricsHUD.svelte';
   import OmniMap from '$lib/components/game/OmniMap.svelte';
   import YCForm from '$lib/components/game/YCForm.svelte';
+  import Tutorial from '$lib/components/game/Tutorial.svelte';
   import { Terminal, X, Zap, ArrowRight, Lock, TrendingUp, Skull } from 'lucide-svelte';
   
   // Subscribe to store
@@ -67,7 +68,7 @@
     <MetricsHUD {metrics} {week} {maxWeeks} {energy} {maxEnergy} />
 
     <!-- MAIN CONTENT -->
-    <div class="flex-1 relative overflow-hidden">
+    <div class="flex-1 relative overflow-hidden" data-tutorial="map">
         
         <!-- GRAPH AREA (FULL SCREEN) -->
         <OmniMap 
@@ -87,7 +88,7 @@
         </div>
 
         <!-- WEEK CONTROL -->
-        <div class="absolute bottom-8 right-8 z-30">
+        <div class="absolute bottom-8 right-8 z-30" data-tutorial="endweek">
             <button 
                 on:click={handleEndWeek}
                 disabled={isProcessing}
@@ -233,4 +234,7 @@
               </div>
           </div>
     {/if}
+
+    <!-- TUTORIAL OVERLAY -->
+    <Tutorial />
 </div>

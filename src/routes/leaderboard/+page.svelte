@@ -1,6 +1,6 @@
 <script>
   import { onMount } from 'svelte';
-  import { ArrowLeft, Trophy, Twitter, Send } from 'lucide-svelte';
+  import { ArrowLeft, Trophy, Info } from 'lucide-svelte';
   
   let leaderboard = [];
   let loading = true;
@@ -47,35 +47,6 @@
       <p class="subtitle">Top startup founders who made it</p>
     </header>
     
-    <!-- Twitter CTA Card -->
-    <div class="twitter-card">
-      <div class="twitter-header">
-        <img 
-          src="https://pbs.twimg.com/profile_images/1836107393679917056/S9xpS2s9_400x400.jpg" 
-          alt="Semih's profile" 
-          class="twitter-avatar"
-        />
-        <div class="twitter-info">
-          <span class="twitter-name">Semih Polat</span>
-          <a href="https://x.com/semihpvlat" target="_blank" rel="noopener" class="twitter-handle">
-            <Twitter size={14} />
-            @semihpvlat
-          </a>
-        </div>
-      </div>
-      <div class="twitter-body">
-        <p>
-          <strong>📢 How to get on the leaderboard:</strong><br/>
-          Currently, we're adding entries manually. If you've made it to YC in the game, 
-          take a screenshot and DM me on Twitter!
-        </p>
-        <a href="https://x.com/messages/compose?recipient_id=semihpvlat" target="_blank" rel="noopener" class="twitter-dm-btn">
-          <Send size={16} />
-          Send me a DM
-        </a>
-      </div>
-    </div>
-    
     {#if loading}
       <div class="loading">
         <div class="spinner"></div>
@@ -112,6 +83,26 @@
         {/each}
       </div>
     {/if}
+    
+    <!-- Info Box at the bottom -->
+    <div class="info-box">
+      <div class="info-icon">
+        <Info size={20} />
+      </div>
+      <div class="info-content">
+        <p class="info-title">How to get on the leaderboard</p>
+        <p class="info-text">
+          Currently, we're adding entries manually. If you've made it to YC in the game, 
+          take a screenshot and DM me on X!
+        </p>
+        <a href="https://x.com/semihpvlat" target="_blank" rel="noopener" class="x-link">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+          @semihpvlat
+        </a>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -171,79 +162,58 @@
     margin-top: 0.5rem;
   }
   
-  /* Twitter Card */
-  .twitter-card {
-    background: linear-gradient(135deg, rgba(29, 161, 242, 0.1) 0%, rgba(29, 161, 242, 0.05) 100%);
-    border: 1px solid rgba(29, 161, 242, 0.3);
-    border-radius: 16px;
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-  }
-  
-  .twitter-header {
+  /* Info Box */
+  .info-box {
     display: flex;
-    align-items: center;
     gap: 1rem;
-    margin-bottom: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin-top: 2rem;
   }
   
-  .twitter-avatar {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    border: 2px solid rgba(29, 161, 242, 0.5);
+  .info-icon {
+    flex-shrink: 0;
+    color: #666;
   }
   
-  .twitter-info {
-    display: flex;
-    flex-direction: column;
+  .info-content {
+    flex: 1;
   }
   
-  .twitter-name {
-    font-weight: 700;
-    font-size: 1.1rem;
-  }
-  
-  .twitter-handle {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    color: #1da1f2;
-    text-decoration: none;
+  .info-title {
+    font-weight: 600;
     font-size: 0.9rem;
+    color: #aaa;
+    margin: 0 0 0.25rem;
   }
   
-  .twitter-handle:hover {
-    text-decoration: underline;
+  .info-text {
+    color: #666;
+    font-size: 0.85rem;
+    margin: 0 0 0.75rem;
+    line-height: 1.5;
   }
   
-  .twitter-body p {
-    color: #ccc;
-    line-height: 1.6;
-    margin-bottom: 1rem;
-  }
-  
-  .twitter-body strong {
-    color: white;
-  }
-  
-  .twitter-dm-btn {
+  .x-link {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    background: #1da1f2;
-    color: white;
-    padding: 0.75rem 1.5rem;
-    border-radius: 9999px;
+    gap: 0.4rem;
+    color: #fff;
+    background: #000;
+    border: 1px solid #333;
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
     text-decoration: none;
-    font-weight: 600;
+    font-size: 0.8rem;
+    font-weight: 500;
     transition: all 0.2s;
   }
   
-  .twitter-dm-btn:hover {
-    background: #1a91da;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(29, 161, 242, 0.4);
+  .x-link:hover {
+    background: #1a1a1a;
+    border-color: #555;
   }
   
   .loading, .error, .empty {
@@ -347,13 +317,13 @@
       font-size: 2rem;
     }
     
-    .twitter-card {
-      padding: 1rem;
+    .info-box {
+      flex-direction: column;
+      gap: 0.5rem;
     }
     
-    .twitter-header {
-      flex-direction: column;
-      text-align: center;
+    .info-icon {
+      display: none;
     }
   }
 </style>

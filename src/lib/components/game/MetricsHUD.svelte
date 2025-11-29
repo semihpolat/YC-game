@@ -1,7 +1,8 @@
 
 <script lang="ts">
-  import { DollarSign, Users, Github, TrendingUp, Brain, Eye, Settings, Trophy, X } from 'lucide-svelte';
+  import { DollarSign, Users, Github, TrendingUp, Brain, Eye, Settings, Trophy, HelpCircle } from 'lucide-svelte';
   import type { GameMetrics } from '$lib/game/types';
+  import { tutorialStore } from '$lib/game/tutorialStore';
 
   export let metrics: GameMetrics;
   export let week: number;
@@ -21,11 +22,16 @@
   function closeSettings() {
     showSettingsMenu = false;
   }
+
+  function startTutorial() {
+    closeSettings();
+    tutorialStore.start();
+  }
 </script>
 
 <div class="w-full border-b border-zinc-800 bg-zinc-950 sticky top-0 z-50 shadow-2xl shadow-zinc-950/50">
   <!-- Top Strip: Time and Energy -->
-  <div class="flex h-1">
+  <div class="flex h-1" data-tutorial="week">
     <div class="h-full bg-red-600 transition-all duration-500" style="width: {timeProgress}%" />
     <div class="h-full bg-zinc-800 flex-1" />
   </div>
@@ -37,7 +43,7 @@
         <div class="flex items-baseline gap-2">
             <h1 class="text-xl font-black tracking-tighter text-white">WEEK {week}<span class="text-zinc-600">/{maxWeeks}</span></h1>
         </div>
-        <div class="w-full max-w-[200px] h-2 bg-zinc-900 rounded-full overflow-hidden border border-zinc-800 relative group">
+        <div class="w-full max-w-[200px] h-2 bg-zinc-900 rounded-full overflow-hidden border border-zinc-800 relative group" data-tutorial="energy">
             <div 
                 class="h-full bg-yellow-500 transition-all duration-300" 
                 style="width: {energyProgress}%" 
@@ -49,7 +55,7 @@
     </div>
 
     <!-- Center: The Grid -->
-    <div class="flex flex-wrap gap-2 justify-center">
+    <div class="flex flex-wrap gap-2 justify-center" data-tutorial="metrics">
       
       <div class="flex flex-col items-center justify-center bg-zinc-900/50 border border-zinc-800 p-2 rounded-lg min-w-[100px]">
         <div class="flex items-center gap-2 {metrics.cash < 1000 ? 'text-red-500 animate-pulse' : 'text-green-400'} mb-1">
@@ -104,7 +110,7 @@
 
     <!-- Right: Controls -->
     <div class="flex items-center gap-4">
-      <div class="hidden md:block text-right">
+      <div class="hidden md:block text-right" data-tutorial="yc-button">
           <div class="text-xs text-zinc-500 font-mono">YC BATCH W24</div>
           <div class="text-xs text-green-500 font-mono animate-pulse">APPLICATIONS OPEN</div>
       </div>
@@ -122,9 +128,16 @@
         <!-- Dropdown Menu -->
         {#if showSettingsMenu}
           <div class="absolute right-0 top-full mt-2 w-48 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl overflow-hidden z-[100]">
+            <button 
+              on:click={startTutorial}
+              class="w-full flex items-center gap-3 px-4 py-3 hover:bg-zinc-800 transition-colors text-zinc-300 hover:text-white text-left"
+            >
+              <HelpCircle size={16} class="text-blue-400" />
+              <span class="font-medium">How to Play</span>
+            </button>
             <a 
               href="/leaderboard" 
-              class="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800 transition-colors text-zinc-300 hover:text-white"
+              class="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800 transition-colors text-zinc-300 hover:text-white border-t border-zinc-800"
               on:click={closeSettings}
             >
               <Trophy size={16} class="text-orange-500" />
