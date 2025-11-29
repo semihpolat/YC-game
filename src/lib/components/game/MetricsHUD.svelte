@@ -127,7 +127,7 @@
         
         <!-- Dropdown Menu -->
         {#if showSettingsMenu}
-          <div class="absolute right-0 top-full mt-2 w-48 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl overflow-hidden z-[100]">
+          <div class="absolute right-0 top-full mt-2 w-56 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl overflow-hidden z-[100]">
             <button 
               on:click={startTutorial}
               class="w-full flex items-center gap-3 px-4 py-3 hover:bg-zinc-800 transition-colors text-zinc-300 hover:text-white text-left"
@@ -142,6 +142,48 @@
             >
               <Trophy size={16} class="text-orange-500" />
               <span class="font-medium">Leaderboard</span>
+            </a>
+            <a 
+              href="https://x.com/semihpvlat" 
+              target="_blank"
+              rel="noopener"
+              class="group flex items-center gap-3 px-4 py-3 border-t border-zinc-800 bg-gradient-to-r from-zinc-900 to-zinc-800 hover:from-zinc-800 hover:to-zinc-700 transition-all"
+              on:click={closeSettings}
+            >
+              <div class="flex items-center justify-center w-8 h-8 rounded-full bg-white group-hover:scale-110 transition-transform">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="black">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+              </div>
+              <div class="flex flex-col">
+                <span class="text-xs text-zinc-400">Play this in real life</span>
+                <span class="font-semibold text-white group-hover:text-orange-400 transition-colors">@semihpvlat</span>
+              </div>
+            </a>
+            
+            <!-- Statue CTA -->
+            <a 
+              href="https://github.com/accretional/statue" 
+              target="_blank"
+              rel="noopener"
+              class="group block px-4 py-4 border-t border-zinc-800 bg-gradient-to-br from-zinc-900 via-zinc-900 to-emerald-950/30 hover:to-emerald-900/40 transition-all"
+              on:click={closeSettings}
+            >
+              <div class="flex items-center gap-3 mb-2">
+                <div class="flex items-center justify-center w-7 h-7 rounded bg-emerald-500/20 group-hover:bg-emerald-500/30 transition-colors">
+                  <span class="text-base">🗿</span>
+                </div>
+                <div class="flex flex-col">
+                  <span class="text-[10px] text-zinc-500 uppercase tracking-wider">Made with</span>
+                  <span class="font-bold text-emerald-400 group-hover:text-emerald-300 transition-colors">Statue SSG</span>
+                </div>
+              </div>
+              <div class="pl-10">
+                <p class="text-[11px] text-zinc-400 leading-relaxed mb-2">Build games like this with one command</p>
+                <code class="block text-[10px] bg-black/50 text-emerald-300/80 px-2 py-1.5 rounded font-mono border border-zinc-800 group-hover:border-emerald-800/50 transition-colors overflow-x-auto">
+                  npx statue init && npm run dev
+                </code>
+              </div>
             </a>
           </div>
         {/if}

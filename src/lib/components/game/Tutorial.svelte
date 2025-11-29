@@ -163,33 +163,38 @@
     <h3 class="tooltip-title">{currentStep.title}</h3>
     <p class="tooltip-description">{currentStep.description}</p>
     
-    <!-- Footer -->
-    <div class="tooltip-footer">
-      <button 
-        class="btn btn-ghost"
-        on:click={handlePrev}
-        disabled={state.currentStep === 0}
-      >
-        <ChevronLeft size={16} />
-        Back
-      </button>
-      
-      <div class="step-dots">
-        {#each TUTORIAL_STEPS as _, i}
-          <span 
-            class="dot" 
-            class:active={i === state.currentStep}
-            class:completed={i < state.currentStep}
-          />
-        {/each}
-      </div>
-      
-      <button class="btn btn-primary" on:click={handleNext}>
-        {state.currentStep === TUTORIAL_STEPS.length - 1 ? "Start" : 'Next'}
-        <ChevronRight size={16} />
-      </button>
+  <!-- Footer -->
+  <div class="tooltip-footer">
+    <button 
+      class="btn btn-ghost"
+      on:click={handlePrev}
+      disabled={state.currentStep === 0}
+    >
+      <ChevronLeft size={16} />
+      Back
+    </button>
+    
+    <div class="step-dots">
+      {#each TUTORIAL_STEPS as _, i}
+        <span 
+          class="dot" 
+          class:active={i === state.currentStep}
+          class:completed={i < state.currentStep}
+        />
+      {/each}
     </div>
+    
+    <button class="btn btn-primary" on:click={handleNext}>
+      {state.currentStep === TUTORIAL_STEPS.length - 1 ? "Start" : 'Next'}
+      <ChevronRight size={16} />
+    </button>
   </div>
+  
+  <!-- Keyboard hint -->
+  <div class="keyboard-hint">
+    <kbd>←</kbd> <kbd>→</kbd> to navigate · <kbd>Esc</kbd> to skip
+  </div>
+</div>
 {/if}
 
 <style>
@@ -353,6 +358,26 @@
     background: hsl(0 0% 45%);
   }
   
+  .keyboard-hint {
+    text-align: center;
+    font-size: 11px;
+    color: hsl(0 0% 35%);
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid hsl(0 0% 14.9%);
+  }
+  
+  kbd {
+    display: inline-block;
+    padding: 2px 6px;
+    font-family: inherit;
+    font-size: 10px;
+    background: hsl(0 0% 14.9%);
+    border: 1px solid hsl(0 0% 20%);
+    border-radius: 4px;
+    color: hsl(0 0% 55%);
+  }
+  
   @media (max-width: 640px) {
     .tutorial-tooltip {
       max-width: calc(100vw - 32px);
@@ -360,6 +385,10 @@
     }
     
     .step-dots {
+      display: none;
+    }
+    
+    .keyboard-hint {
       display: none;
     }
   }
