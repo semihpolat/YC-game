@@ -600,15 +600,6 @@
   </div>
   
   <!-- Fixed UI Elements -->
-  
-  <!-- YC Application Button (Top Right) -->
-  <div class="yc-apply-container">
-    <button class="yc-apply-btn" on:click={openYCApplication}>
-      <span class="yc-logo">Y</span>
-      <span class="yc-text">Apply to YC S24</span>
-      <span class="yc-status-dot"></span>
-    </button>
-  </div>
 
   <!-- Zoom Controls (Top Left) -->
   <div class="overlay-ui-top-left">
